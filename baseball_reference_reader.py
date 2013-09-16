@@ -106,7 +106,6 @@ class BaseballReferenceReader(object):
         self.name = None
         self.position = None
         self.year = None
-        pass
 
     def _stats_from_soup(self, soup, stats_re, columns, table_id):
         """
@@ -193,11 +192,15 @@ class BaseballReferenceReader(object):
         """
         Get Player Name & Base Url
         """
+        # TODO ココを丸ごとキャッシュしていいかも
+        # 小文字にまとめて名前を分割
         _lower_name = name.lower()
         first_name, middle_name = _lower_name.split(self.PLAYERS_NAME_DELI)
         letter = middle_name[:1]
+        # ページリンクを取得
         names_w_links = self._get_player_page_links(letter)
         for player_name, player_page_url in names_w_links:
+            # 一致するページを返す
             if player_name.lower() == _lower_name:
                 return player_name, player_page_url
 
@@ -226,6 +229,7 @@ class BaseballReferenceReader(object):
         Get Player Stats from SOUP Object
         """
         stats_re, columns, table_id = "", [], ""
+        # pitcher or batter
         if position == self.POSITION_PITCHER:
             stats_re = self.PITCHING_STANDARD_RE
             columns = self.STANDARD_PITCHING_COLUMNS
@@ -239,6 +243,18 @@ class BaseballReferenceReader(object):
             return {}
         return self._stats_from_soup(soup, stats_re, columns, table_id)
 
+    def get_player_soup(self, name):
+        """
+        Get Player Soup Object
+        """
+        # TODO if soup object is null
+        player_name, player_page_url = self.get_player_name_and_url(name)
+        soup = self.url_to_beautiful_soup(player_page_url)
+        # TODO soupをserialize
+        # TODO else (soup object is not null)
+        # TODO soupをdeserialize
+        return soup
+
     def get_player_stats(self, name, position, year):
         """
         Get Player Name & Stats
@@ -247,8 +263,8 @@ class BaseballReferenceReader(object):
         self.position = position
         self.year = year
         long_player_name, stats = "", []
-        player_name, player_page_url = self.get_player_name_and_url(name)
-        soup = self.url_to_beautiful_soup(player_page_url)
+
+        soup = self.get_player_soup(name)
         long_player_name = self.long_player_name_from_soup(soup)
         stats = self.stats_from_soup(soup, position)
         return long_player_name, stats

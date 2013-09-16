@@ -102,5 +102,6 @@ class TestBaseballReferenceReader(unittest.TestCase):
         self.assertEqual(stats_2012["SOBB"], "2.48")
         self.assertEqual(stats_2012["Awards"], "AS,CYA-9,RoY-3")
 
+
 if __name__ == '__main__':
     unittest.main()
