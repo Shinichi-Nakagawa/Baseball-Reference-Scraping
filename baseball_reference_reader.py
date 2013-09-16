@@ -22,11 +22,11 @@ class BaseballReferenceReader(object):
         'Age',
         'Team',
         'League',
-        'Games Played or Pitched',
-        'Plate Appearances',
-        'At Bats',
-        'Runs Scored/Allowed',
-        'Hits/Hits Allowed',
+        'G',
+        'PA',
+        'AB',
+        'R',
+        'H',
         '2B',
         '3B',
         'HR',
@@ -39,11 +39,12 @@ class BaseballReferenceReader(object):
         'OBP',
         'SLG',
         'OPS',
-        'OPX+',
+        'OPS+',
         'TB',
         'GDP',
         'HBP',
         'SH',
+        'SF',
         'IBB',
         'Pos',
         'Awards'
@@ -183,7 +184,6 @@ class BaseballReferenceReader(object):
         _lower_name = name.lower()
         first_name, middle_name = _lower_name.split(self.PLAYERS_NAME_DELI)
         letter = middle_name[:1]
-        print "letter: %s" % letter
         names_w_links = self._get_player_page_links(letter)
         for player_name, player_page_url in names_w_links:
             if player_name.lower() == _lower_name:
