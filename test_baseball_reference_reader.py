@@ -22,9 +22,10 @@ class TestBaseballReferenceReader(unittest.TestCase):
         """
         query_name = "Ichiro Suzuki"
         position = "b"
-        name, stats = self.br.get_player_stats(query_name, position)
+        year = "2001"
+        name, stats = self.br.get_player_stats(query_name, position, year)
         self.assertEqual(name, "Ichiro Suzuki(Wizard)")
-        stats_2001 = stats[0]
+        stats_2001 = stats
         self.assertEqual(stats_2001["Year"], "2001")
         self.assertEqual(stats_2001["Age"], "27")
         self.assertEqual(stats_2001["Team"], "SEA")
@@ -62,9 +63,10 @@ class TestBaseballReferenceReader(unittest.TestCase):
         """
         query_name = "Yu Darvish"
         position = "p"
-        name, stats = self.br.get_player_stats(query_name, position)
+        year = "2012"
+        name, stats = self.br.get_player_stats(query_name, position, year)
         self.assertEqual(name, "Sefat Farid Yu Darvish(twitter:@faridyu)")
-        stats_2012 = stats[0]
+        stats_2012 = stats
         self.assertEqual(stats_2012["Year"], "2012")
         self.assertEqual(stats_2012["Age"], "25")
         self.assertEqual(stats_2012["Team"], "TEX")

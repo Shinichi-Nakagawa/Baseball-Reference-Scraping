@@ -103,6 +103,9 @@ class BaseballReferenceReader(object):
         """
         Initialize
         """
+        self.name = None
+        self.position = None
+        self.year = None
         pass
 
     def _stats_from_soup(self, soup, stats_re, columns, table_id):
@@ -131,19 +134,27 @@ class BaseballReferenceReader(object):
         """
         Stats List from Table
         """
-        stats = []
+        stats = {}
         _table_body = table.findAll('tbody')[0]
-        for table_row in _table_body.findAll('tr'):
+        table_rows = _table_body.findAll('tr')
+
+        # 降順で回す（古いデータは欲しがらない前提）
+        for table_row in reversed(table_rows):
             table_row_id = table_row.get('id')
             if not table_row_id:
                 continue
             year = re.findall(stats_re, table_row_id)
+            # 該当年度以外は飛ばす
+            if year[0][0] != self.year:
+                continue
             row_values = {}
             values = [element.text for element in table_row.findAll('td')]
             my_keys_with_values = zip(columns, values)
             row_values = dict(my_keys_with_values)
 
-            stats.append(row_values)
+            stats = row_values
+            break
+
         return stats
 
     def _link_to_url(self, link_element, domain='baseball-reference.com'):
@@ -225,13 +236,16 @@ class BaseballReferenceReader(object):
             table_id = self.BATTING_STANDARD_TABLE
         else:
             print "Don't Care Position: %s " % position
-            return []
+            return {}
         return self._stats_from_soup(soup, stats_re, columns, table_id)
 
-    def get_player_stats(self, name, position):
+    def get_player_stats(self, name, position, year):
         """
         Get Player Name & Stats
         """
+        self.name = name
+        self.position = position
+        self.year = year
         long_player_name, stats = "", []
         player_name, player_page_url = self.get_player_name_and_url(name)
         soup = self.url_to_beautiful_soup(player_page_url)
@@ -251,12 +265,10 @@ class BaseballReferenceParsingException(Exception):
 
 def main(args):
     br = BaseballReferenceReader()
-    name, stats = br.get_player_stats(args.name, args.position)
+    name, stats = br.get_player_stats(args.name, args.position, args.year)
     print "Player Name: %s" % name
-    for stat in stats:
-        if stat["Year"] == str(args.year):
-            for key in stat.keys():
-                print "%s : %s" % (key, stat[key])
+    for key in stats.keys():
+        print "%s : %s" % (key, stats[key])
 
 
 if __name__ == '__main__':
