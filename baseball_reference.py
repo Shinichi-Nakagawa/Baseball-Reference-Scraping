@@ -41,6 +41,42 @@ STANDARD_BATTING_COLUMNS=(
 'Awards'
 )
 
+STANDARD_PITCHING_COLUMNS=(
+'Year',
+'Age',
+'Team',
+'League',
+'Win',
+'Lose',
+'W-L%',
+'ERA',
+'G',
+'GS',
+'GF',
+'CG',
+'SHO',
+'SV',
+'IP',
+'H',
+'R',
+'ER',
+'HR',
+'BB',
+'IBB',
+'SO',
+'HBP',
+'BK',
+'WP',
+'BF',
+'ERA+',
+'WHIP',
+'H9',
+'BB9',
+'SO9',
+'SOBB',
+'Awards'
+)
+
 
 def url_to_beautiful_soup(url): 
     url = urllib.urlopen(url)
@@ -50,6 +86,20 @@ def url_to_beautiful_soup(url):
 def link_to_url(link_element, domain='baseball-reference.com'):
     href = filter(lambda attr: attr[0] == 'href', link_element.attrs)[0][1]
     return ''.join(('http://', domain, href))
+
+def find_pitching_standard_table(soup):
+    for table in soup.findAll('table'):
+        try:
+            if table['id'] == 'pitching_standard':
+                return table
+        except KeyError:
+            '''table does not have an "id" attribute, oh-well, the 
+            table we're looking for does'''
+            pass
+    #exception_string = 'Did not find "batting_standard" table in %s' % soup
+    #raise BaseballReferenceParsingException(exception_string)
+
+pitching_standard_re = 'pitching_standard\.((18|19|20)[0-9]{2})'
 
 def find_batting_standard_table(soup):
     for table in soup.findAll('table'):
@@ -84,10 +134,35 @@ def decompose_batting_table(batting_table_soup):
         stats.append(row_values)
     return stats
 
+def decompose_pitching_table(pitching_table_soup):
+    '''Takes the soup of pitching statistics table
+
+    '''
+    stats = []
+    pitching_table_body = pitching_table_soup.findAll('tbody')[0]
+    for table_row in pitching_table_body.findAll('tr'):
+        table_row_id = table_row.get('id')
+        if not table_row_id:
+            continue
+        year = re.findall(pitching_standard_re, table_row_id)
+        row_values = {}
+        values = [element.text for element in table_row.findAll('td')]
+        my_keys_with_values = zip(STANDARD_PITCHING_COLUMNS, values)
+        row_values = dict(my_keys_with_values)
+
+        stats.append(row_values)
+    return stats
+
 def batting_stats_from_soup(soup):
     batting_table = find_batting_standard_table(soup)
     if batting_table:
         stats = decompose_batting_table(batting_table)
+        return stats
+
+def pitching_stats_from_soup(soup):
+    pitching_table = find_pitching_standard_table(soup)
+    if pitching_table:
+        stats = decompose_pitching_table(pitching_table)
         return stats
 
 def player_page_links(players_page_url):
@@ -105,12 +180,28 @@ def player_page_links(players_page_url):
         yield player_name, player_page_url
 
 
+def get_player_name_and_url(in_player_name):
+    _player_name = in_player_name.lower()
+    first_name, middle_name = _player_name.split(" ")
+    letter = middle_name[:1]
+    print "letter: %s" % letter
+    names_w_links = get_player_page_links(letter)
+    for player_name, player_page_url in names_w_links:
+        if player_name.lower() == _player_name:
+            #print "baseball-reference player: %s" % player_name
+            return player_name, player_page_url
+
 def get_all_player_page_links():
     for letter in ascii_letters[:26]: #lowercase letters
-        players_page_url = PLAYERS_PAGE_TEMPLATE % {'letter': letter}
-        names_w_links = player_page_links(players_page_url)
+        names_w_links = get_player_page_links(letter)
         for player_name, player_page_url in names_w_links:
             yield player_name, player_page_url
+
+
+def get_player_page_links(letter):
+    players_page_url = PLAYERS_PAGE_TEMPLATE % {'letter': letter}
+    return player_page_links(players_page_url)
+
 
 def long_player_name_from_soup(soup):
     '''Gets a more specific name from the player page to avoid duplicate names.
@@ -137,6 +228,23 @@ def get_all_player_stats():
 
         yield long_player_name, batting_stats
 
+
+def get_player_stats(in_player_name, position):
+    long_player_name, stats = "", ""
+    player_name, player_page_url = get_player_name_and_url(in_player_name)
+
+    soup = url_to_beautiful_soup(player_page_url)
+    if position == "b":
+        stats = batting_stats_from_soup(soup)
+    elif position == "p":
+        stats = pitching_stats_from_soup(soup)
+    else:
+        stats = "Don't Care."
+    long_player_name = long_player_name_from_soup(soup)
+
+    return long_player_name, stats
+
+
 class BaseballReferenceParsingException(Exception):
     def __init__(self, value):
         def __init__(self, value):
@@ -144,12 +252,27 @@ class BaseballReferenceParsingException(Exception):
         def __str__(self):
             return repr(self.value)
 
-def main():
+def main(args):
     
-    for player, stats in get_all_player_stats():
-        print player
+    #for player, stats in get_all_player_stats():
+        #print player
+    player ,stats = get_player_stats(args.name, args.position)
+    print player
+    for stat in stats:
+        if stat["Year"] != str(args.year):
+            continue
+        for key in stat.keys():
+            print "%s : %s" % (key, stat[key])
 
     return 0
 
 if __name__ == '__main__':
-    sys.exit(main())
+
+    import argparse
+    parser = argparse.ArgumentParser(description='Baseball Reference')
+    parser.add_argument('-n', '--name', required=True, help="Player Name(ex. Ichiro Suzuki)")
+    parser.add_argument('-p', '--position', required=True, help="position(p:pitcher b:batter)")
+    parser.add_argument('-y', '--year', required=True, help="Stats Year")
+    parser.add_argument('--version', action='version', version='%(prog)s 1.0') # version
+    args = parser.parse_args() 
+    sys.exit(main(args))
