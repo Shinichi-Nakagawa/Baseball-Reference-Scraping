@@ -279,6 +279,21 @@ class BaseballReferenceParsingException(Exception):
             return repr(self.value)
 
 
+class SABRmetrics(object):
+
+    @classmethod
+    def calc_adam_dunn_percent(cls, stats):
+        u'''
+        アダム・ダン率算出
+        ((本塁打+四球+三振)/打席数) * 100
+        '''
+        bb = float(stats["BB"])
+        hr = float(stats["HR"])
+        so = float(stats["SO"])
+        pa = float(stats["PA"])
+        return round(((hr+bb+so) / pa) * 100, 1)
+
+
 def main(args):
     br = BaseballReferenceReader()
     name, stats = br.get_player_stats(args.name, args.position, args.year)

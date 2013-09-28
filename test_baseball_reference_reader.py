@@ -6,6 +6,7 @@ Baseball Reference Reader Unit Test
 
 import unittest
 from baseball_reference_reader import BaseballReferenceReader
+from baseball_reference_reader import SABRmetrics
 
 
 class TestBaseballReferenceReader(unittest.TestCase):
@@ -16,9 +17,9 @@ class TestBaseballReferenceReader(unittest.TestCase):
     def tearDown(self):
         self.br = None
 
-    def test_batter_ichiro_2010(self):
+    def test_batter_pujols_2010(self):
         """
-        イチローの2001年成績
+        プホルス2010
         """
         query_name = "Albert Pujols"
         position = "b"
@@ -227,6 +228,17 @@ class TestBaseballReferenceReader(unittest.TestCase):
         self.assertEqual(stats["SO9"], "16.7")
         self.assertEqual(stats["SOBB"], "8.29")
         self.assertEqual(stats["Awards"], "AS,CYA-5,MVP-8")
+
+    def test_batter_adam_dunn_2012(self):
+        """
+        アダム・ダンのアダム・ダン率2012シーズン
+        """
+        query_name = "Adam Dunn"
+        position = "b"
+        year = "2012"
+        name, stats = self.br.get_player_stats(query_name, position, year)
+        dunn = SABRmetrics.calc_adam_dunn_percent(stats)
+        self.assertEqual(dunn, 56.7)
 
 
 if __name__ == '__main__':
