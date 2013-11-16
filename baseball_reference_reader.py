@@ -293,13 +293,34 @@ class SABRmetrics(object):
         pa = float(stats["PA"])
         return round(((hr+bb+so) / pa) * 100, 1)
 
+    @classmethod
+    def calc_adam_dunn_percent_pitcher(cls, stats):
+        u'''
+        アダム・ダン率算出
+        ((本塁打+四球+死球+三振)/対戦打者数) * 100
+        '''
+        bb = float(stats["BB"])
+        hbp = float(stats["HBP"])
+        hr = float(stats["HR"])
+        so = float(stats["SO"])
+        bf = float(stats["BF"])
+        return round(((hr+bb+hbp+so) / bf) * 100, 1)
+
 
 def main(args):
     br = BaseballReferenceReader()
     name, stats = br.get_player_stats(args.name, args.position, args.year)
+    dunn = "0.0"
+    if args.adam_dunn == "True" and args.position == br.POSITION_BATTER:
+        dunn = SABRmetrics.calc_adam_dunn_percent(stats)
+    elif args.adam_dunn == "True" and args.position == br.POSITION_PITCHER:
+        dunn = SABRmetrics.calc_adam_dunn_percent_pitcher(stats)
     print "Player Name: %s" % name
-    for key in stats.keys():
-        print "%s : %s" % (key, stats[key])
+    if args.adam_dunn == "True":
+        print "Adam Dunn Percent: %s%%" % (str(dunn))
+    else:
+        for key in stats.keys():
+            print "%s : %s" % (key, stats[key])
 
 
 if __name__ == '__main__':
@@ -325,6 +346,12 @@ if __name__ == '__main__':
         '--year',
         required=True,
         help="Stats Year"
+    )
+    parser.add_argument(
+        '-d',
+        '--adam_dunn',
+        default="False",
+        help="Adam Dunn percent"
     )
     parser.add_argument(
         '--version',

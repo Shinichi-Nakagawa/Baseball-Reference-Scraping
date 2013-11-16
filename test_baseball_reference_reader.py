@@ -240,6 +240,17 @@ class TestBaseballReferenceReader(unittest.TestCase):
         dunn = SABRmetrics.calc_adam_dunn_percent(stats)
         self.assertEqual(dunn, 56.7)
 
+    def test_pitcher_adam_dunn_2013(self):
+        """
+        岩隈久志のアダム・ダン率2013シーズン
+        """
+        query_name = "Hisashi Iwakuma"
+        position = "p"
+        year = "2013"
+        name, stats = self.br.get_player_stats(query_name, position, year)
+        dunn = SABRmetrics.calc_adam_dunn_percent_pitcher(stats)
+        self.assertEqual(dunn, 29.3)
+
 
 if __name__ == '__main__':
     unittest.main()
